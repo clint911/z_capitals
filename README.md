@@ -1,5 +1,5 @@
 <!-- TITLE -->
-<p align="center"> 
+<p align="center">
   <img width="100px" src="https://github.com/celo-org/celo-composer/blob/main/images/readme/celo_isotype.svg" align="center" alt="Celo" />
  <h2 align="center">Celo Composer</h2>
  <p align="center">Build, deploy, and iterate quickly on decentralized applications using Celo.</p>
@@ -52,9 +52,9 @@
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project
-
-Celo Composer allows you to quickly build, deploy, and iterate on decentralized applications using Celo. It provides a number of frameworks, examples, and Celo specific functionality to help you get started with your next dApp.
-
+Dollar Cost Averaging project that aims to utilize strategies such as Dollar Cost Averaging to slowly APE into Bitcoin especially during the post halving period where the price of BTC is expected to slowly rise.
+This WebApp will also integrate other strategies such as moving averages, the RSI index, short-period simple moving averages, Fibonacci retracement Levels and in the future Machine learning algorithms to calculate buy threshold prices that are optimal over the given investment period.
+The main Goal of this app is to achieve OPtimal Capital efficiency through the use of algorithms.In simple terms to ensure the maximum amount of BTC's purchasable over a given period of time.
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Built With
