@@ -1,4 +1,20 @@
- // complete swap functionality -> add recieve,fallback -> cross check accepting swap -> Create Tests to prove functionality -> present
+ /*
+(1) User Goes to Frontend -> Deposits x amount of asset, say cUSD, user can withdraw cUSD or whatever (we have the amount & updated)
+(2) User Selects Investment Period ->  contract setsgets period
+(3)  End of user Journey: start of computation -> Contract requests current price of WBTC,gets it from our other contract
+(4) Now we have a base price,(Simulate Strategy before integrating into SC)
+
+
+
+
+
+
+
+
+
+
+
+   */
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 pragma abicoder v2;
@@ -30,14 +46,17 @@ contract DollarCostAveraging {
     //State variables
     uint24 public constant poolFee = 3000;//lets set a poolFee of  3% for this
     uint256 currSeedNo = block.number; //NOTE: will be replaced once baseline functionality is over
-    uint256 public investmentPeriod; //TODO: refactor to use less bytes & to be private
+
+    uint256 private investmentPeriod; //TODO: refactor to use less bytes & to be private
+    uint256 private currentWBTCPrice;
+
     uint256 public fundingIntervals = 1; //also refactor like above
     uint256 public investmentAmount; //@RefactorLAB
     uint256 public valBTCBought; //value of BTC bought at the end of the period
     uint256 public sumOfValBoughtAtIntervals;
     uint256 public amountToSpendAtEachInterval; //TODO:Will be replaced by a function that uses mathematical optimization techniques to calculate the amount to spend each time based on the current price and past experience as well as the 200 day average and totalAmount for now initialize to a percentage ie 10% for 10 month investment period
     uint256 public currAmountSpent; //TODO: add modules to compare prevAmounts and currAmountSpent and how the number of Bitcoins compare
-    uint256 public currBalance; //TODO: refactor to private and add setters and getters
+    uint256 private currBalance; //TODO: refactor to private and add setters and getters
     uint256 public avgNoOfBlocks = 17280 * 30;//avg no of blocks in celo per month
     uint256 public lastBlockNoBoughtAt;
     uint256 public yieldAmount;
@@ -45,15 +64,22 @@ contract DollarCostAveraging {
     uint256 public grossComparativeVal; //diff btwn val that wouldve been bought at the start and the curr total
     uint256 public netComparativeVal; //diff btwn val that wouldve been bought at the start and the total val summed interval
     //TODO: add some neat stuff like calculating mean value bought as well as Standard Deviation for more Data
+
     address public clientAddr; //depending on  the means of funding chosen, this can be the address that the WBTC will be sent to
     //alfajores BTC/USD address
+
     address public alfajoresBTCAddr = 0xC0f1567a0037383068B1b269A81B07e76f99710c;
 
  //NOTE:Asset contract values on uniswap
   address public constant cUSD =0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address public constant wBTC =     0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
+  //Address of the contract that fetches our price
+  address public constant PriceFetcherContractAddr;
+
     //Events
+    event Deposited(address indexed clientAddr, uint256 cUSDAmount);//or USDC
+    event Withdrawn(address indexed clientAddr, uint256 cUSDAmount);// or USDC
     event boughtWBTC(
         address indexed clientAddr,
         uint currValOfBTCBought,
@@ -68,11 +94,16 @@ contract DollarCostAveraging {
      * Aggregator: BTC/USD
      * Address: alfajoresBTCAddr
      */
+
      /* Initializing the interface within constructor*/
-    constructor(ISwapRouter _swapRouter)  {
+     /** We might end up adding a swapper contract for modularity**/
+    constructor(ISwapRouter _swapRouter, address _priceFetcherContractAddr)  {
       swapRouter = _swapRouter;
-        dataFeed = AggregatorV3Interface(alfajoresBTCAddr);
+     //   dataFeed = AggregatorV3Interface(alfajoresBTCAddr); ---oursourced to another contract for modularity
+     PriceFetcherContractAddr = _priceFetcherContractAddr;
+        clientAddr = address(msg.sender);
     }
+
     //HACK: to add more functionality  as contract matures
      //TODO: Add the approve function
      /*
@@ -160,8 +191,42 @@ function swapExactOutputSingle(uint256 amountOut, uint256 amountInMaximum) exter
             TransferHelper.safeTransfer(cUSD, msg.sender, amountInMaximum - amountIn);
         }
 }
-    function deposit () payable external {}
-    receive() payable external {}
+    /* This function sort of updates the current user balance */
+    function deposit () public payable {
+      //Takes in address of whoever deposited and the amount deposited
+      uint256 currBalance += msg.value;
+    event Deposited(msg.sender, msg.value);
+    }
+    function withdraw () external {
+      uint256 currBalance = address(this).balance;
+      //preventing re-entracy TODO: add better patch
+      if (currBalance > 0) {
+        currBalance = 0;
+      payable(msg.sender).transfer(currBalance);
+      emit Withdrawn(msg.sender, currBalance);
+      }
+    }
+    function getCurrBalance () public view returns {
+      return     address(this).currBalance;
+    }
+
+    /** Lets  Set & Get the investment period from the user */
+    function setInvestmentPeriod(uint256 _investmentPeriod) {
+    investmentPeriod = _investmentPeriod;
+    }
+    function getInvestmentPeriod() public view returns(uint256) {
+      return investmentPeriod;
+    }
+
+    /** Lets GET the price from our oracle Contract **/
+  function getPriceFromOurContract() external view returns (uint256) {
+    //Creating an instance of our Oracle Contract
+    PriceFetcherContractAddr priceFetcherContract = priceFetcherContract(PriceFetcherContractAddr);
+    uint256 assetPrice = priceFetcherContract.getLatestPrice();
+    return assetPrice; //This is the price of the asset in question ie wBTC/USD ;
+    }
+
+    /** Lets GET&SET current price of BTC at time of deposit, this will be used as base price for start of calculation **/
 
     //fallback function (if exists)
     //external
@@ -221,6 +286,8 @@ function swapExactOutputSingle(uint256 amountOut, uint256 amountInMaximum) exter
     //private
     //view & pure functions
  }
+
+
 
 
 
