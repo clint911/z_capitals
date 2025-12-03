@@ -1,0 +1,3 @@
+[submodule "z_capitals_sc/lib/forge-std"]
+	path = z_capitals_sc/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
